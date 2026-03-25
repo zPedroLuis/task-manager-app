@@ -201,6 +201,22 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# Node
+node_modules/
+dist/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Frontend env
+frontend/.env
+frontend/.env.*
+
+# Docker local overrides
+docker-compose.override.yml
+
 # Marimo
 marimo/_static/
 marimo/_lsp/
