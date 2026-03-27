@@ -49,5 +49,6 @@ def test_users_list_authenticated():
     response = client.get("/api/auth/users/")
 
     assert response.status_code == 200
-    assert len(response.data) == 1
-    assert response.data[0]["username"] == "guest"
+    assert response.data["count"] == 1
+    assert len(response.data["results"]) == 1
+    assert response.data["results"][0]["username"] == "guest"
