@@ -9,6 +9,12 @@ const initialTask = {
   category: "",
 };
 
+const toList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.results)) return payload.results;
+  return [];
+};
+
 export default function TasksPage() {
   const [tasks, setTasks] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -21,14 +27,26 @@ export default function TasksPage() {
   const [nextPage, setNextPage] = useState(null);
   const [previousPage, setPreviousPage] = useState(null);
 
+  const safeCategories = Array.isArray(categories) ? categories : [];
+  const safeUsers = Array.isArray(users) ? users : [];
+  const safeTasks = Array.isArray(tasks) ? tasks : [];
+
   const fetchCategories = async () => {
-    const response = await api.get("/categories/");
-    setCategories(response.data);
+    try {
+      const response = await api.get("/categories/");
+      setCategories(toList(response.data));
+    } catch {
+      setCategories([]);
+    }
   };
 
   const fetchUsers = async () => {
-    const response = await api.get("/auth/users/");
-    setUsers(response.data);
+    try {
+      const response = await api.get("/auth/users/");
+      setUsers(toList(response.data));
+    } catch {
+      setUsers([]);
+    }
   };
 
   const fetchTasks = async (url = "/tasks/") => {
@@ -37,10 +55,16 @@ export default function TasksPage() {
     if (filterCategory) params.category = filterCategory;
     if (search) params.search = search;
 
-    const response = await api.get(url, { params });
-    setTasks(response.data.results || []);
-    setNextPage(response.data.next);
-    setPreviousPage(response.data.previous);
+    try {
+      const response = await api.get(url, { params });
+      setTasks(response.data.results || []);
+      setNextPage(response.data.next);
+      setPreviousPage(response.data.previous);
+    } catch {
+      setTasks([]);
+      setNextPage(null);
+      setPreviousPage(null);
+    }
   };
 
   useEffect(() => {
@@ -92,7 +116,7 @@ export default function TasksPage() {
   };
 
   const suggestTitle = async () => {
-    const selectedCategory = categories.find((c) => `${c.id}` === `${taskForm.category}`);
+    const selectedCategory = safeCategories.find((c) => `${c.id}` === `${taskForm.category}`);
     const categoryQuery = selectedCategory ? selectedCategory.name.toLowerCase() : "geral";
     const response = await api.get(`/integrations/suggested-task-title/?category=${categoryQuery}`);
     setTaskForm((current) => ({ ...current, title: response.data.suggested_title }));
@@ -131,7 +155,7 @@ export default function TasksPage() {
               onChange={(e) => setTaskForm({ ...taskForm, category: e.target.value })}
             >
               <option value="">Sem categoria</option>
-              {categories.map((category) => (
+              {safeCategories.map((category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
@@ -157,7 +181,7 @@ export default function TasksPage() {
             <button type="submit">Adicionar</button>
           </form>
           <ul>
-            {categories.map((category) => (
+            {safeCategories.map((category) => (
               <li key={category.id}>{category.name}</li>
             ))}
           </ul>
@@ -176,7 +200,7 @@ export default function TasksPage() {
           </select>
           <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
             <option value="">Todas categorias</option>
-            {categories.map((category) => (
+            {safeCategories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
               </option>
@@ -185,7 +209,7 @@ export default function TasksPage() {
         </div>
 
         <ul className="task-list">
-          {tasks.map((task) => (
+          {safeTasks.map((task) => (
             <li key={task.id} className="task-item">
               <div>
                 <strong>{task.title}</strong>
@@ -198,7 +222,7 @@ export default function TasksPage() {
               <div className="row">
                 <select defaultValue="" onChange={(e) => shareTask(task.id, e.target.value)}>
                   <option value="">Compartilhar com...</option>
-                  {users.map((user) => (
+                  {safeUsers.map((user) => (
                     <option key={user.id} value={user.id}>
                       {user.username}
                     </option>
